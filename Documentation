@@ -1,0 +1,130 @@
+---------------------------------------------------PrettyPrint----------------------------------------------------
+Submitter: Michael Korsunsky
+Course: Intro to object oriented programming
+Lecturers: Dr. Noah Gradovitch and Dr. Eli Packer
+
+
+---------------------------------------------------Brief Description----------------------------------------------------
+An user-computer interface for 'pretty prints' consisting of 3 main steps. At the first step, the user insert a file's
+path and if he wants to write to it (and thus deleting all previous content) or to append content to the existing
+content. Then in second step, the user receives a menu with 7 options and as long he does not insert '7', the program
+continues. At last, if user chose options 1-4, the third menu appears in order to insert user's content to file.
+
+
+----------------------------------------------------Design Patters------------------------------------------------------
+* Singleton: class prettyPrint is the main class (for the back part), although the user have zero interaction with this
+             class, (actually the user zero no interaction with any of the classes in this program). An instance from
+             this class must be created once (to run the interface between the program and the user) and no more, thus
+             I used singleton principles to assure that.
+
+* Builder: the building of content, consists of two steps: first, building the frame, and second building the content
+           with content and frames. the module contentBuilder is responsible for that. this module consist of three
+           classes that responsible for building content in three different ways (depends on user's choice) and
+           a Director function (workBuilder) in module prettyPrint which menage the build.
+
+* Prototype: the builders classes make manipulation on Content instances (every time a builder instance created, also
+             a Content instance created). Every time the user chooses options 1-3 in the second menu, a clone of the
+             Content instance created (deep copy), and in that way, the program "remembers" the last choice of user.
+
+* Facade: in order to hide the complexity of the program, i used a facade principle, thus client executes only the
+          'pretty_print.run()' method, all other parts taken care by 'runFacade' method in prettyPrint.
+
+
+------------------------------------------------------Class menu--------------------------------------------------------
+the class is not initiated and only consisting of 3 static methods which are used in prettyPrint class:
+1. def firstMenu(): shows the first menu as discussed in 'Brief Description', and returns a
+   tuple: (filePath, fileOption). filePath: the path of file chosen by the user, fileOption: user's choice between
+   write or append content to file. if the user chooses a file path not existed, new file created with the help of
+   fileManipulator class. the program will continue to ask the user to choose between write or append as long he/she
+   did not inserted that value.
+2. def secondMenu(): shows the second menu as discussed in 'Brief Description', and returns an userOption between the
+   7 possible options (correct values: 1-7). as long as the user chooses the wrong value, the second menu continues
+   to show up.
+3. def thirdMenu(): asks user to insert content, and the content returned.
+
+
+-----------------------------------------------------Class Content------------------------------------------------------
+* A class that implements the interface IContent.
+* IContent consists of two abstract functions: 1. def setFrame(self)
+                                               2. def setContent(self)
+* Content class implement those functions and 3 additional ones: 1. def getFrame(self)
+                                                                 2. def getContent(self):
+                                                                 3. def getCopy(self, obj):
+* def getCopy(self, obj): used to create a clone of an Content object. the function is using deep copy while cloning.
+
+
+-------------------------------------------------Module contentBuilder--------------------------------------------------
+* A module consisting of 3 classes: 1. class buildWithAsterisk
+                                    2. class buildWithHashMark
+                                    3. class buildWithAnyChar
+* All those 3 classes are implementing the IbuildWith interface,
+  which consist of 2 abstract functions: 1. def buildFrame(self, frame)
+                                         2. def buildContent(self, _content)
+* class buildWithAsterisk: creating a Content instance in the init,
+                set its self.frame with 120 chars of * with the def buildFrame(self, frame="*") method,
+                and set self.content of Content instance with buildContent(self, _content)
+* class buildWithHashMark, class buildWithAnyChar are similar to class buildWithAsterisk, the only difference
+  between them is in the frame build, in buildWithHashMark it is build with 120 chars of # with
+  buildFrame(self, frame="#") method, and in buildWithAnyChar it is build with any char specified with
+  buildFrame(self, frame) method.
+
+
+-------------------------------------------------Class fileManipulator--------------------------------------------------
+* consisting of 7 static methods: 1. def isFilePathExist(filePath)
+                                  2. def createEmptyFile(filePath)
+                                  3. def writeContentToFile(content, filePath)
+                                  4. def appendContentToFile(content, filePath)
+                                  5. def insertContentToFile(content, filePath, fileOption)
+                                  6. def showContentFromFile(filePath)
+                                  7. def deleteContentFromFile(filePath)
+* def isFilePathExist(filePath): returns a boolean value if the file path exist
+* def createEmptyFile(filePath): creates an empty file with a given file path
+* def writeContentToFile(content, filePath): override the current content in file with the given file path, and then
+                                             the new content inserted
+* def appendContentToFile(content, filePath): appends content to file (in a new line) with the given filePath. if the
+                                              the file is empty, content appended to the first line.
+* def insertContentToFile(content, filePath, fileOption): inserts given content to a file with the given filePath with
+                                                          the given insert option (write/append). the method uses the
+                                                          writeContentToFile(content, filePath) or
+                                                          appendContentToFile(content, filePath) depends on the file
+                                                          option.
+* def showContentFromFile(filePath): prints the content of file by the file's path given
+* def deleteContentFromFile(filePath): deletes a file with the specified filepath only if the given file path exist
+
+
+---------------------------------------------------Class prettyPrint----------------------------------------------------
+* The main class that manages the program.
+* def run(self): a method used in 'main' class, to start the program. its sole purpose is to call the runFacade(self)
+                 method, in that way the user do not see the 'behind the scenes' of the program.
+* def runFacade(self): receiving filePath and fileOption from menu.firstMenu() method. Then, while the user's choice do
+                       not equals to '7', the program continues to run. if options 1-4 chosen third menu is shown with
+                       menu.thirdMenu() method. if user's option is between 1-3
+                       self.workBuilder(userOption, content, filePath, fileOption) method is called. if file is deleted
+                       (userOption == 6), the program asks the user to give a new path for file, and a new file option
+                       in options 1-3 a cloned Content obj returned (and assigned) to copyObj variable.
+                       If option 4 is chosen and copy not equals to None, last frame chosen is inserted with the user's
+                       inserted content. If option 4 is chosen and copy not equals to None, it means that there is
+                       no available 'last choice' yet (and it printed). if option 5 is chosen, the file content is
+                       shown.
+* def workBuilder(self, userOption, content, filePath, fileOption): uses 1 of 3 functions depends on userOption.
+* def workOption1(self, content, filePath, fileOption): creates buildWithAsterisk() object (which means that a Content
+                                                        object is also created, builds the frame (with '*') in Content
+                                                        object and then builds the content. self.content in the Content
+                                                        object is now set, thus this content is inserted to file with
+                                                        the given file path, and the insert option
+                                                        (file option: write/append). after the insertion a cloned object
+                                                        of the Content object is created and returned.
+* def workOption2(self, content, filePath, fileOption): same as workOption1, the only difference is that the frame is
+                                                        build with '#'.
+* def workOption3(self, content, filePath, fileOption): same as workOption1, the only difference is that the frame is
+                                                        chosen by the user. if the user insert more than one char, only
+                                                        the first char is chosen to build the frame.
+* def workOption4(self, content, frame, filePath, fileOption): same as workOption3, with 2 differences: first, the frame
+                                                               is not chosen by the user, instead it is taken from the
+                                                               last cloned Content object. second, copy object is not
+                                                               created in this method.
+* def workOption5(self, filePath):  shows the content of a file by a given file path
+* def __init__(self): singleton init
+
+
+------------------------------------------------end of documentation----------------------------------------------------
